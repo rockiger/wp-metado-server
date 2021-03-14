@@ -1,0 +1,56 @@
+type Board {
+  id: ID! @unique
+  columns: [Column!]!
+  isDeleted: Boolean!
+  projects: [Project!]!
+  showBacklog: boolean!
+  title: String!
+
+  createdBy: User!
+  updatedBy: User!
+
+  createdAt: DateTime! # should be automated by sql
+  updatedAt: DateTime! # should be automated by sql
+}
+
+type Column {
+  id: ID! @unique
+  taskIds: [String!]!
+  title: String!
+}
+
+type Task {
+  id: ID! @unique
+  description: String
+  finishedAt: DateTime
+  project: Project!
+  title: String!
+  #type: commes through project
+
+  createdBy: User!
+  updatedBy: User!
+
+  createdAt: DateTime! # should be automated by sql
+  updatedAt: DateTime! # should be automated by sql
+}
+
+type Project {
+  id: ID! @unique
+  name: String!
+  type: String! #"googletasks" | "github"
+  createdBy: User!
+  updatedBy: User!
+
+  createdAt: DateTime! # should be automated by sql
+  updatedAt: DateTime! # should be automated by sql
+}
+
+type User {
+  Id: ID! @unique
+  activeBoard: Board!
+  databaseId: Int!
+  email: String!
+  githubToken: String
+  firstName: String!
+  lastName: String!
+}
