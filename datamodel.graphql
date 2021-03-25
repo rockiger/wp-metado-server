@@ -1,48 +1,51 @@
+scalar DateTime
+
 type Board {
   id: ID! @unique
   columns: [Column!]!
   isDeleted: Boolean!
   projects: [Project!]!
-  showBacklog: boolean!
+  showBacklog: Boolean!
   title: String!
-
   createdBy: User!
   updatedBy: User!
-
   createdAt: DateTime! # should be automated by sql
   updatedAt: DateTime! # should be automated by sql
+  tasks: [Task]!
 }
 
 type Column {
   id: ID! @unique
   taskIds: [String!]!
   title: String!
+  noOfTasksToShow: Int
 }
 
 type Task {
   id: ID! @unique
   description: String
   finishedAt: DateTime
-  project: Project!
+  #project: Project!
   title: String!
-  #type: commes through project
-
   createdBy: User!
   updatedBy: User!
-
   createdAt: DateTime! # should be automated by sql
   updatedAt: DateTime! # should be automated by sql
 }
 
 type Project {
   id: ID! @unique
-  name: String!
+  title: String!
   type: String! #"googletasks" | "github"
   createdBy: User!
   updatedBy: User!
-
   createdAt: DateTime! # should be automated by sql
   updatedAt: DateTime! # should be automated by sql
+  meta: ProjectMeta
+}
+
+type ProjectMeta {
+  fullname: String
 }
 
 type User {

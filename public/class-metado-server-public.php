@@ -107,7 +107,8 @@ class Metado_Server_Public {
 					'type' => ['non_null' => 'Int'],
 				],
 				'taskIds' => ['type' => ['list_of' => 'String']],
-				'title' => ['type' => ['non_null' => 'String']]
+				'title' => ['type' => ['non_null' => 'String']],
+				'noOfTasksToShow' => ['type' => 'Int']
 			],
 		]);
 
@@ -120,7 +121,7 @@ class Metado_Server_Public {
 				'title' => ['type' => ['non_null' => 'String']],
 				'type' => ['type' => ['non_null' => 'String']],
 				'createdAt' => ['type' => ['non_null' => 'String']],
-				'Meta' => ['type' => 'ProjectMeta']
+				'meta' => ['type' => 'ProjectMeta']
 			],
 		]);
 
@@ -142,7 +143,7 @@ class Metado_Server_Public {
 				'title' => ['type' => ['non_null' => 'String']],
 				'createdAt' => ['type' => ['non_null' => 'String']],
 				'finishedAt' => ['type' => 'String'],
-				//! 'project' => ['type' => ['non_null' => 'Project']]
+				'projectId' => ['type' => ['non_null' => 'Int']]
 			],
 		]);
 
@@ -151,13 +152,12 @@ class Metado_Server_Public {
 			'description' => 'Desrcibe what the field sohuld be used for',
 			'resolve' => function () {
 				global $wpdb;
-				$board_results = $wpdb->get_row("SELECT * FROM wp_metado_boards WHERE id = 1 LIMIT 1;");
+				$board_results = $wpdb->get_row("SELECT * FROM wp_metado_boards WHERE id = 1 LIMIT 1;"); // check if current user is owner of board
 				$projects_results = $wpdb->get_results("SELECT * FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = 1);");
 				$tasks_results = $wpdb->get_results("SELECT * from wp_metado_tasks t WHERE t.project_id IN (SELECT p.id FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = 1));");
 
 
 				//repr_log(gettype($columns));
-				repr_log($tasks_results);
 				if ($board_results) {
 					$columns =  json_decode($board_results->columns);
 					return [
@@ -175,7 +175,7 @@ class Metado_Server_Public {
 						'createdAt' => $board_results->createdAt,
 						'updatedAt' => $board_results->updatedAt,
 						'tasks' => array_map(fn ($el) => [
-							'id' => $el->id, 'title' => $el->title, 'description' => $el->task_description, 'finishedAt' => $el->finishedAt,
+							'id' => $el->id, 'title' => $el->title, 'description' => $el->task_description, 'finishedAt' => $el->finishedAt, 'projectId' => $el->project_id
 						], $tasks_results)
 					];
 				} else {
@@ -193,6 +193,51 @@ class Metado_Server_Public {
 						'tasks' => []
 					];
 				}
+			}
+		]);
+
+		register_graphql_mutation('updateBoard', [
+
+			# inputFields expects an array of Fields to be used for inputting values to the mutation
+			'inputFields'         => [
+				'id' => [
+					'type' => 'Int',
+					'description' => __('The id of the board', 'metado-server'),
+				],
+				'showBacklog' => [
+					'type' => 'Boolean',
+					'description' => __('The state of the backlog', 'metado-server'),
+				],
+			],
+
+			# outputFields expects an array of fields that can be asked for in response to the mutation
+			# the resolve function is optional, but can be useful if the mutateAndPayload doesn't return an array
+			# with the same key(s) as the outputFields
+			'outputFields'        => [
+				'exampleOutput' => [
+					'type' => 'String',
+					'description' => __('Description of the output field', 'your-textdomain'),
+					'resolve' => function ($payload, $args, $context, $info) {
+						return isset($payload['exampleOutput']) ? $payload['exampleOutput'] : null;
+					}
+				]
+			],
+
+			# mutateAndGetPayload expects a function, and the function gets passed the $input, $context, and $info
+			# the function should return enough info for the outputFields to resolve with
+			'mutateAndGetPayload' => function ($input, $context, $info) {
+				global $wpdb;
+				$id = $input['id'];
+				$showBacklog = $input['showBacklog'];
+				$wpdb->update($wpdb->prefix . 'metado_boards', ['showBacklog' => $showBacklog], ['id' => $id]);
+				// Do any logic here to sanitize the input, check user capabilities, etc
+				$exampleOutput = null;
+				if (!empty($input['exampleInput'])) {
+					$exampleOutput = 'Your input was: ' . $input['exampleInput'];
+				}
+				return [
+					'exampleOutput' => $exampleOutput,
+				];
 			}
 		]);
 	}
