@@ -148,16 +148,22 @@ class Metado_Server_Public {
 		]);
 
 		register_graphql_field('RootQuery', 'Board', [
+			'args' => [
+				'id' => [
+					'type' => ['non_null' => 'Int'],
+					'description' => __( 'The ID of the board', 'metado-server')
+				]
+				],
 			'type' => 'Board',
 			'description' => 'Desrcibe what the field sohuld be used for',
-			'resolve' => function () {
+			'resolve' => function ($source, $args, $context, $info ) {
 				global $wpdb;
-				$board_results = $wpdb->get_row("SELECT * FROM wp_metado_boards WHERE id = 1 LIMIT 1;"); // check if current user is owner of board
-				$projects_results = $wpdb->get_results("SELECT * FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = 1);");
-				$tasks_results = $wpdb->get_results("SELECT * from wp_metado_tasks t WHERE t.project_id IN (SELECT p.id FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = 1));");
+				$id = $args['id'];
 
+				$board_results = $wpdb->get_row("SELECT * FROM wp_metado_boards WHERE id = $id LIMIT 1;"); // check if current user is owner of board
+				$projects_results = $wpdb->get_results("SELECT * FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = $id);");
+				$tasks_results = $wpdb->get_results("SELECT * from wp_metado_tasks t WHERE t.project_id IN (SELECT p.id FROM `wp_metado_projects` p WHERE p.id IN (SELECT project_id FROM wp_metado_boards_2_projects WHERE board_id = $id));");
 
-				//repr_log(gettype($columns));
 				if ($board_results) {
 					$columns =  json_decode($board_results->columns);
 					return [
